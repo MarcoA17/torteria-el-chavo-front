@@ -1,0 +1,68 @@
+<div class="admin-contenedor">
+  <div class="admin-header">
+    <div>
+      <h2>📋 Panel de Pedidos</h2>
+      <p>Tortería El Chavo · Gestión en tiempo real</p>
+    </div>
+    <button class="btn-refrescar" (click)="cargarPedidos()" [disabled]="cargando">
+      {{ cargando ? 'Actualizando...' : '↻ Actualizar' }}
+    </button>
+  </div>
+
+  <div class="filtros-estatus">
+    <button
+      [class.activo]="filtroEstatus === 'TODOS'"
+      (click)="filtroEstatus = 'TODOS'">
+      Todos ({{ pedidos.length }})
+    </button>
+    <button
+      *ngFor="let est of estatusOpciones"
+      [class.activo]="filtroEstatus === est"
+      (click)="filtroEstatus = est">
+      {{ est }}
+    </button>
+  </div>
+
+  <p *ngIf="cargando" class="estado">Cargando pedidos...</p>
+  <p *ngIf="errorMensaje" class="estado error">{{ errorMensaje }}</p>
+
+  <p *ngIf="!cargando && pedidosFiltrados.length === 0" class="estado">
+    No hay pedidos con este estatus.
+  </p>
+
+  <div class="lista-pedidos" *ngIf="!cargando && pedidosFiltrados.length > 0">
+    <article class="tarjeta-pedido" *ngFor="let pedido of pedidosFiltrados">
+      <div class="pedido-top">
+        <div>
+          <strong>Folio #{{ pedido.id }}</strong>
+          <span class="badge" [attr.data-estatus]="pedido.estatus">{{ pedido.estatus }}</span>
+        </div>
+        <strong class="pedido-total">${{ pedido.total | number:'1.2-2' }}</strong>
+      </div>
+
+      <div class="pedido-info">
+        <p><strong>Cliente:</strong> {{ pedido.clienteNombre || 'Sin nombre' }}</p>
+        <p *ngIf="pedido.telefono"><strong>Teléfono:</strong> {{ pedido.telefono }}</p>
+        <p><strong>Entrega:</strong> {{ pedido.tipoEntrega }} — {{ pedido.direccion }}</p>
+        <p *ngIf="pedido.createdAt"><small>Creado: {{ pedido.createdAt | date:'dd/MM/yyyy HH:mm' }}</small></p>
+      </div>
+
+      <ul class="pedido-items" *ngIf="pedido.items.length">
+        <li *ngFor="let item of pedido.items">
+          {{ item.cantidad }}x {{ nombreProducto(item.productoId) }}
+          <span>(${{ item.precioUnitario | number:'1.2-2' }} c/u)</span>
+        </li>
+      </ul>
+
+      <div class="acciones-estatus">
+        <span>Cambiar estatus:</span>
+        <button
+          *ngFor="let est of estatusOpciones"
+          [disabled]="pedido.estatus === est || actualizandoId === pedido.id"
+          (click)="cambiarEstatus(pedido.id, est)">
+          {{ est }}
+        </button>
+      </div>
+    </article>
+  </div>
+</div>

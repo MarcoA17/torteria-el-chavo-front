@@ -2,7 +2,8 @@
   "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
   "version": 1,
   "cli": {
-    "packageManager": "npm"
+    "packageManager": "npm",
+    "analytics": "fcc5c235-7ccb-40f6-9f34-da76c5177827"
   },
   "newProjectRoot": "projects",
   "projects": {
@@ -30,6 +31,12 @@
           },
           "configurations": {
             "production": {
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.prod.ts"
+                }
+              ],
               "budgets": [
                 {
                   "type": "initial",
@@ -59,7 +66,8 @@
               "buildTarget": "torteria-front:build:production"
             },
             "development": {
-              "buildTarget": "torteria-front:build:development"
+              "buildTarget": "torteria-front:build:development",
+              "proxyConfig": "proxy.conf.json"
             }
           },
           "defaultConfiguration": "development"

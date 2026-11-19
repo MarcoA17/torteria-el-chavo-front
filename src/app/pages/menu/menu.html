@@ -1,0 +1,82 @@
+<div style="display: flex; gap: 20px;">
+  <!-- Lista de Productos -->
+  <div style="flex: 2;">
+    <h2>Nuestro Menú</h2>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+      <div *ngFor="let p of productos" style="border: 1px solid #ccc; padding: 10px; border-radius: 8px;">
+        <h3>{{ p.nombre }}</h3>
+        <p>Categoría: {{ p.categoria }}</p>
+        <p><strong>${{ p.precio }}</strong></p>
+        <button (click)="agregarAlCarrito(p)" [disabled]="!p.disponible">
+          {{ p.disponible ? 'Agregar al carrito' : 'Agotado' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Carrito -->
+  <div style="flex: 1; background: #f9f9f9; padding: 20px; border-radius: 8px;">
+    <h3>Tu Carrito</h3>
+    <ul>
+      <li *ngFor="let item of carrito">
+        {{ item.producto.nombre }} x {{ item.cantidad }} - ${{ item.producto.precio * item.cantidad }}
+      </li>
+    </ul>
+    <h4>Total: ${{ total }}</h4>
+    <button style="width: 100%; padding: 10px; background: green; color: white;">Ir a Pagar</button>
+  </div>
+</div><div class="container">
+  <h1>🌮 Tortería El Chavo</h1>
+
+  <div *ngIf="pedidoCreado" class="alerta">
+    ¡Pedido creado con éxito! 🎉
+  </div>
+
+  <div class="layout">
+    <!-- Menú -->
+    <div class="menu">
+      <h2>Menú</h2>
+      <div class="grid">
+        <div *ngFor="let p of productos" class="producto">
+          <h3>{{ p.nombre }}</h3>
+          <p class="cat">{{ p.categoria }}</p>
+          <p class="precio">${{ p.precio }}</p>
+          <button (click)="agregarAlCarrito(p)" [disabled]="!p.disponible">
+            {{ p.disponible ? 'Agregar' : 'Agotado' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Carrito y Checkout -->
+    <div class="carrito">
+      <h2>🛒 Tu Pedido</h2>
+      <div *ngIf="carrito.length === 0">
+        <p>No has agregado productos.</p>
+      </div>
+      <div *ngFor="let c of carrito" class="item-carrito">
+        <span>{{ c.producto.nombre }}</span>
+        <div class="controles">
+          <button (click)="quitar(c.producto)">-</button>
+          <span>{{ c.cantidad }}</span>
+          <button (click)="agregarAlCarrito(c.producto)">+</button>
+        </div>
+        <span>${{ c.producto.precio * c.cantidad }}</span>
+      </div>
+
+      <hr>
+      <h3>Total: ${{ total }}</h3>
+
+      <div *ngIf="carrito.length > 0" class="formulario">
+        <input [(ngModel)]="clienteNombre" placeholder="Tu nombre" />
+        <input [(ngModel)]="telefono" placeholder="Teléfono" />
+        <select [(ngModel)]="tipoEntrega">
+          <option value="DOMICILIO">Domicilio</option>
+          <option value="RECOGER">Recoger en tienda</option>
+        </select>
+        <input *ngIf="tipoEntrega === 'DOMICILIO'" [(ngModel)]="direccion" placeholder="Dirección" />
+        <button class="btn-comprar" (click)="enviarPedido()">Realizar Pedido</button>
+      </div>
+    </div>
+  </div>
+</div>
