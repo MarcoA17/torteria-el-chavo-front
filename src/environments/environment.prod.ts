@@ -1,4 +1,4 @@
 export const environment = {
-  production: true,
-  apiUrl: 'https://<TU-BACKEND-URL>'
+    production: true,
+    apiUrl: 'https://torteria-el-chavo-backend.onrender.com'
 };
