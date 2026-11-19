@@ -46,7 +46,88 @@ export class App implements OnInit {
   private menuUrl = `${environment.apiUrl}/api/menu`;
   private pedidosUrl = `${environment.apiUrl}/api/pedidos`;
 
-  vista: 'menu' | 'admin' = 'menu';
+  vista: 'menu' | 'admin' | 'seguimiento' = 'menu';
+  esAdminAutenticado = false;
+  mostrarModalPin = false;
+  pinIngresado = '';
+  errorPin = '';
+  // Cámbialo por el PIN que prefiera el dueño del negocio
+  private readonly PIN_ADMIN = '1971';
+
+  ngOnInit(): void {
+    this.cargarMenu();
+
+    // Si entran con ?admin=1 en la URL, abre el cuadro de PIN
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('admin') === '1') {
+      this.mostrarModalPin = true;
+    }
+
+    // Recuperar el último folio guardado en el navegador del cliente
+    const ultimoFolio = localStorage.getItem('ultimoFolioChavo');
+    if (ultimoFolio) {
+      this.folioConsulta = Number(ultimoFolio);
+    }
+  }
+
+  folioConsulta: number | null = null;
+  pedidoConsultado: any = null;
+  consultandoFolio = false;
+  errorConsultaFolio = '';
+
+  consultarEstatusPedido() {
+    if (!this.folioConsulta) return;
+    this.consultandoFolio = true;
+    this.errorConsultaFolio = '';
+
+    this.http.get<any[]>(this.pedidosUrl)
+      .pipe(timeout(45000))
+      .subscribe({
+        next: (lista) => {
+          const encontrado = lista.find(p => p.id === Number(this.folioConsulta));
+          if (encontrado) {
+            this.pedidoConsultado = encontrado;
+          } else {
+            this.pedidoConsultado = null;
+            this.errorConsultaFolio = `No encontramos el Folio #${this.folioConsulta}.`;
+          }
+          this.consultandoFolio = false;
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          this.errorConsultaFolio = 'No se pudo consultar el estatus en este momento.';
+          this.consultandoFolio = false;
+          this.cdr.detectChanges();
+        }
+      });
+  }
+
+  irASeguimiento() {
+    this.vista = 'seguimiento';
+    if (this.folioConsulta) {
+      this.consultarEstatusPedido();
+    }
+  }
+
+  abrirAccesoAdmin() {
+    if (this.esAdminAutenticado) {
+      this.vista = 'admin';
+    } else {
+      this.pinIngresado = '';
+      this.errorPin = '';
+      this.mostrarModalPin = true;
+    }
+  }
+
+  verificarPin() {
+    if (this.pinIngresado === this.PIN_ADMIN) {
+      this.esAdminAutenticado = true;
+      this.mostrarModalPin = false;
+      this.vista = 'admin';
+    } else {
+      this.errorPin = 'PIN incorrecto';
+    }
+  }
 
   negocio = {
     nombre: 'Tortería El Chavo',
@@ -70,10 +151,6 @@ export class App implements OnInit {
   enviandoPedido = false;
   errorPedido = '';
 
-  ngOnInit(): void {
-    this.cargarMenu();
-  }
-
   cargarMenu() {
     this.cargando = true;
     this.errorCarga = '';
@@ -90,7 +167,7 @@ export class App implements OnInit {
         },
         error: (err) => {
           console.error('Error al cargar el menú:', err);
-          this.errorCarga = 'No se pudo cargar el menú desde http://localhost:8080/api/menu.';
+          this.errorCarga = `No se pudo cargar el menú desde ${this.menuUrl}.`;
           this.cargando = false;
           this.cdr.detectChanges();
         }
@@ -155,7 +232,7 @@ export class App implements OnInit {
     };
 
     this.http.post<PedidoCreadoResponse>(this.pedidosUrl, payload)
-      .pipe(timeout(8000))
+      .pipe(timeout(45000))
       .subscribe({
         next: (pedidoGuardado) => {
           this.enviandoPedido = false;
@@ -164,6 +241,11 @@ export class App implements OnInit {
           this.telefono = '';
           this.direccion = '';
           this.notas = '';
+          
+          localStorage.setItem('ultimoFolioChavo', String(pedidoGuardado.id));
+          this.folioConsulta = pedidoGuardado.id;
+          this.pedidoConsultado = pedidoGuardado;
+          this.vista = 'seguimiento';
 
           const lineas = snapshotCarrito.map(
             i => `• ${i.cantidad}x ${i.producto.nombre} - $${(i.producto.precio * i.cantidad).toFixed(2)}`

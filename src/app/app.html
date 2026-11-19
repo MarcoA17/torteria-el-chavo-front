@@ -1,50 +1,81 @@
 <div class="contenedor">
-  <header class="encabezado">
-    <h1>🌮 {{ negocio.nombre }}</h1>
-    <p>{{ negocio.direccion }} · Tel: {{ negocio.telefonos[0] }} / {{ negocio.telefonos[1] }}</p>
+  <header class="encabezado-vecindad">
+    <div class="banner-contenido">
+      <div class="emblema-chavo" aria-hidden="true">
+        <!-- Ilustración SVG temática: Gorra verde + Torta de Jamón + Barril -->
+        <svg viewBox="0 0 120 120" width="84" height="84">
+          <circle cx="60" cy="60" r="56" fill="#fef3c7" stroke="#facc15" stroke-width="4" />
+          <!-- Gorra verde con orejeras -->
+          <path d="M28 52 C28 30, 92 30, 92 52 Z" fill="#15803d" />
+          <rect x="22" y="48" width="52" height="8" rx="4" fill="#166534" />
+          <path d="M82 48 L94 48 L92 70 L80 66 Z" fill="#15803d" />
+          <!-- Torta de jamón -->
+          <path d="M26 78 C26 62, 94 62, 94 78 Z" fill="#d97706" />
+          <path d="M24 80 Q42 74 60 80 T96 80" stroke="#f43f5e" stroke-width="5" fill="none" stroke-linecap="round" />
+          <path d="M26 85 Q44 90 60 85 T94 85" stroke="#22c55e" stroke-width="4" fill="none" stroke-linecap="round" />
+          <rect x="26" y="88" width="68" height="10" rx="5" fill="#b45309" />
+        </svg>
+      </div>
+
+      <div class="titulo-negocio">
+        <span class="etiqueta-vecindad">🥖 ¡Directo desde la vecindad!</span>
+        <h1>{{ negocio.nombre }}</h1>
+        <p class="frase-gancho">"¡Se me chispoteó el antojo! Pide tu torta de jamón calentita"</p>
+        <p class="info-contacto">📍 {{ negocio.direccion }} · 📞 {{ negocio.telefonos[0] }} / {{ negocio.telefonos[1] }}
+        </p>
+      </div>
+    </div>
+
     <div class="selector-vista">
       <button type="button" [class.activo]="vista === 'menu'" (click)="vista = 'menu'">
-        Menú y Pedido
+        🥖 Menú y Pedido
       </button>
-      <button type="button" [class.activo]="vista === 'admin'" (click)="vista = 'admin'">
-        Panel de Pedidos
+      <button type="button" [class.activo]="vista === 'seguimiento'" (click)="irASeguimiento()">
+        🔎 ¿Ya aceptaron mi orden?
+      </button>
+      <!-- Solo aparece si ya se autenticó como admin -->
+      <button *ngIf="esAdminAutenticado" type="button" [class.activo]="vista === 'admin'" (click)="vista = 'admin'">
+        📋 Panel Admin
       </button>
     </div>
   </header>
 
+  <!-- VISTA 1: MENÚ Y CARRITO -->
   <main class="grid-principal" *ngIf="vista === 'menu'">
     <section class="menu-seccion">
       <div class="barra-superior">
-        <h2>Menú</h2>
+        <h2>Menú de la Vecindad</h2>
         <div class="filtros" *ngIf="!cargando && !errorCarga">
-          <button
-            *ngFor="let cat of categorias"
-            [class.activo]="categoriaSeleccionada === cat"
+          <button *ngFor="let cat of categorias" [class.activo]="categoriaSeleccionada === cat"
             (click)="categoriaSeleccionada = cat">
             {{ cat }}
           </button>
         </div>
       </div>
 
-      <p *ngIf="cargando" class="estado">Cargando menú desde el backend...</p>
+      <p *ngIf="cargando" class="estado">Preparando el menú desde la cocina...</p>
       <p *ngIf="errorCarga" class="estado error">{{ errorCarga }}</p>
 
       <div class="lista-productos" *ngIf="!cargando && !errorCarga">
-        <div class="tarjeta-producto" *ngFor="let p of productosFiltrados">
+        <div class="tarjeta-producto" [class.destacada]="p.nombre.toLowerCase().includes('jamón')"
+          *ngFor="let p of productosFiltrados">
           <div>
-            <span class="categoria">{{ p.categoria }}</span>
+            <div class="badges-producto">
+              <span class="categoria">{{ p.categoria }}</span>
+              <span class="badge-favorita" *ngIf="p.nombre.toLowerCase().includes('jamón')">⭐ ¡La del Chavo!</span>
+            </div>
             <h3>{{ p.nombre }}</h3>
             <strong class="precio">${{ p.precio | number:'1.2-2' }}</strong>
           </div>
-          <button class="btn-agregar" (click)="agregar(p)">+ Agregar</button>
+          <button class="btn-agregar" (click)="agregar(p)">+ ¡Échame una!</button>
         </div>
       </div>
     </section>
 
     <aside class="carrito-seccion">
-      <h2>🛒 Tu Pedido</h2>
+      <h2>🛒 Tu Canasta</h2>
 
-      <p *ngIf="carrito.length === 0" class="vacio">No has agregado productos.</p>
+      <p *ngIf="carrito.length === 0" class="vacio">Tu canasta está vacía... ¡no te quedes con el antojo!</p>
 
       <div class="item-carrito" *ngFor="let item of carrito">
         <div>
@@ -66,7 +97,7 @@
         </label>
 
         <label>
-          Teléfono:
+          Teléfono (para avisarte):
           <input type="tel" [(ngModel)]="telefono" placeholder="Ej. 2431261277" />
         </label>
 
@@ -96,14 +127,84 @@
         <strong>Total: ${{ total | number:'1.2-2' }}</strong>
       </div>
 
-      <button
-        class="btn-whatsapp"
-        [disabled]="carrito.length === 0 || enviandoPedido"
+      <button class="btn-whatsapp" [disabled]="carrito.length === 0 || enviandoPedido"
         (click)="confirmarYEnviarWhatsApp()">
-        {{ enviandoPedido ? 'Guardando pedido...' : 'Pedir por WhatsApp' }}
+        {{ enviandoPedido ? 'Enviando a cocina...' : '📲 Pedir por WhatsApp' }}
       </button>
     </aside>
   </main>
 
-  <app-admin-pedidos *ngIf="vista === 'admin'"></app-admin-pedidos>
+  <!-- VISTA 2: SEGUIMIENTO DEL CLIENTE -->
+  <section class="seguimiento-seccion" *ngIf="vista === 'seguimiento'">
+    <h2>🔎 Estado de tu Orden</h2>
+    <p>Ingresa tu número de folio para ver si la tortería ya aceptó tu pedido:</p>
+
+    <div class="buscador-folio">
+      <input type="number" [(ngModel)]="folioConsulta" placeholder="Ej. 1" />
+      <button (click)="consultarEstatusPedido()" [disabled]="consultandoFolio">
+        {{ consultandoFolio ? 'Buscando...' : 'Consultar Folio' }}
+      </button>
+    </div>
+
+    <p *ngIf="errorConsultaFolio" class="estado error">{{ errorConsultaFolio }}</p>
+
+    <div class="tarjeta-estatus-cliente" *ngIf="pedidoConsultado">
+      <div class="estatus-header">
+        <strong>Folio #{{ pedidoConsultado.id }} — {{ pedidoConsultado.clienteNombre }}</strong>
+        <span>Total: ${{ pedidoConsultado.total | number:'1.2-2' }}</span>
+      </div>
+
+      <div class="pasos-orden">
+        <div class="paso" [class.completado]="true">
+          <span>1. Recibido</span>
+          <small>Orden registrada</small>
+        </div>
+        <div class="paso"
+          [class.completado]="pedidoConsultado.estatus === 'EN_PREPARACION' || pedidoConsultado.estatus === 'ENTREGADO'">
+          <span>2. ¡Aceptado!</span>
+          <small>En la plancha 🔥</small>
+        </div>
+        <div class="paso" [class.completado]="pedidoConsultado.estatus === 'ENTREGADO'">
+          <span>3. Listo / Entregado</span>
+          <small>¡Buen provecho!</small>
+        </div>
+      </div>
+
+      <p class="mensaje-estatus" *ngIf="pedidoConsultado.estatus === 'PENDIENTE'">
+        ⏳ Tu pedido está esperando confirmación de la tortería. Pulsa "Consultar Folio" en unos momentos.
+      </p>
+      <p class="mensaje-estatus aceptado" *ngIf="pedidoConsultado.estatus === 'EN_PREPARACION'">
+        🎉 <strong>¡Tu orden fue ACEPTADA!</strong> Ya estamos preparando tus tortas.
+      </p>
+      <p class="mensaje-estatus entregado" *ngIf="pedidoConsultado.estatus === 'ENTREGADO'">
+        ✅ <strong>¡Tu pedido ya fue ENTREGADO!</strong> Gracias por tu preferencia.
+      </p>
+      <p class="mensaje-estatus cancelado" *ngIf="pedidoConsultado.estatus === 'CANCELADO'">
+        ❌ Este pedido fue cancelado. Comunícate al {{ negocio.telefonos[0] }} si tienes dudas.
+      </p>
+    </div>
+  </section>
+
+  <!-- VISTA 3: PANEL ADMIN (PROTEGIDO) -->
+  <app-admin-pedidos *ngIf="vista === 'admin' && esAdminAutenticado"></app-admin-pedidos>
+
+  <!-- PIE DE PÁGINA CON ACCESO DISCRETO PARA EL DUEÑO -->
+  <footer class="pie-vecindad">
+    <span>© {{ negocio.nombre }} · San Juan Raboso</span>
+    <button type="button" class="link-admin" (click)="abrirAccesoAdmin()">🔒 Acceso Administración</button>
+  </footer>
+
+  <!-- MODAL DE PIN ADMIN -->
+  <div class="modal-fondo" *ngIf="mostrarModalPin">
+    <div class="modal-pin">
+      <h3>🔒 Acceso de Administración</h3>
+      <p>Ingresa el PIN del local para gestionar pedidos:</p>
+      <input type="password" [(ngModel)]="pinIngresado" (keyup.enter)="verificarPin()" placeholder="PIN" />
+      <p *ngIf="errorPin" class="estado error">{{ errorPin }}</p>
+      <div class="modal-botones">
+        <button type="button" (click)="mostrarModalPin = false">Cancelar</button>
+        <button type="button" class="btn-entrar" (click)="verificarPin()">Entrar</button>
+      </div>
+    </div>
+  </div>
 </div>
