@@ -52,13 +52,15 @@
         <h2>Menú de la Vecindad</h2>
         <div class="filtros" *ngIf="!cargando && !errorCarga">
           <button *ngFor="let cat of categorias" [class.activo]="categoriaSeleccionada === cat"
-            (click)="categoriaSeleccionada = cat">
+            (click)="seleccionarCategoria(cat)">
             {{ cat }}
           </button>
         </div>
       </div>
 
-      <p *ngIf="cargando" class="estado">Preparando el menú desde la cocina...</p>
+      <p *ngIf="cargando" class="estado">
+        🔥 Encendiendo la plancha y cargando el menú...
+      </p>
 
       <div *ngIf="errorCarga" class="estado error">
         <p>{{ errorCarga }}</p>
@@ -69,7 +71,7 @@
 
       <div class="lista-productos" *ngIf="!cargando && !errorCarga">
         <div class="tarjeta-producto" [class.destacada]="p.nombre.toLowerCase().includes('jamón')"
-          *ngFor="let p of productosFiltrados">
+          *ngFor="let p of productosVisibles">
           <div>
             <div class="badges-producto">
               <span class="categoria">{{ p.categoria }}</span>
@@ -80,6 +82,27 @@
           </div>
           <button class="btn-agregar" (click)="agregar(p)">+ ¡Échame una!</button>
         </div>
+      </div>
+
+      <div class="paginacion-menu"
+        *ngIf="totalPaginas > 1">
+        <button type="button" (click)="irAPagina(1)" [disabled]="paginaActual === 1">
+          &laquo;
+        </button>
+        <button type="button" (click)="irAPagina(paginaActual - 1)" [disabled]="paginaActual === 1">
+          &lsaquo;
+        </button>
+
+        <span class="indicador-pagina">
+          Página {{ paginaActual }} de {{ totalPaginas }}
+        </span>
+
+        <button type="button" (click)="irAPagina(paginaActual + 1)" [disabled]="paginaActual === totalPaginas">
+          &rsaquo;
+        </button>
+        <button type="button" (click)="irAPagina(totalPaginas)" [disabled]="paginaActual === totalPaginas">
+          &raquo;
+        </button>
       </div>
     </section>
 

@@ -1,8 +1,8 @@
-import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
-import { retry, timer, throwError, timeout } from 'rxjs';
+import { retry, timer, timeout, Subscription, interval, switchMap, catchError, of } from 'rxjs';
 import { AdminPedidosComponent } from './pages/admin-pedidos/admin-pedidos';
 import { environment } from '../environments/environment';
 
@@ -41,11 +41,12 @@ interface PedidoCreadoResponse {
   templateUrl: './app.html',
   styleUrl: './app.css'
 })
-export class App implements OnInit {
+export class App implements OnInit, OnDestroy {
   private http = inject(HttpClient);
   private cdr = inject(ChangeDetectorRef);
   private menuUrl = `${environment.apiUrl}/api/menu`;
   private pedidosUrl = `${environment.apiUrl}/api/pedidos`;
+  private keepAliveSub?: Subscription;
 
   vista: 'menu' | 'admin' | 'seguimiento' = 'menu';
   esAdminAutenticado = false;
@@ -57,6 +58,7 @@ export class App implements OnInit {
 
   ngOnInit(): void {
     this.cargarMenu();
+    this.iniciarKeepAlive();
 
     // Si entran con ?admin=1 en la URL, abre el cuadro de PIN
     const params = new URLSearchParams(window.location.search);
@@ -69,6 +71,23 @@ export class App implements OnInit {
     if (ultimoFolio) {
       this.folioConsulta = Number(ultimoFolio);
     }
+  }
+
+  private iniciarKeepAlive(): void {
+    // Ping silencioso cada 10 minutos mientras la app esté abierta
+    this.keepAliveSub = interval(10 * 60 * 1000)
+      .pipe(
+        switchMap(() =>
+          this.http.get<Producto[]>(this.menuUrl).pipe(
+            catchError(() => of(null))
+          )
+        )
+      )
+      .subscribe();
+  }
+
+  ngOnDestroy(): void {
+    this.keepAliveSub?.unsubscribe();
   }
 
   folioConsulta: number | null = null;
@@ -187,11 +206,6 @@ export class App implements OnInit {
   get categorias(): string[] {
     const unicas = new Set(this.productos.map(p => p.categoria));
     return ['Todas', ...Array.from(unicas)];
-  }
-
-  get productosFiltrados(): Producto[] {
-    if (this.categoriaSeleccionada === 'Todas') return this.productos;
-    return this.productos.filter(p => p.categoria === this.categoriaSeleccionada);
   }
 
   agregar(producto: Producto) {
@@ -318,4 +332,37 @@ export class App implements OnInit {
 
     return null;
   }
+
+  // Paginación del menú
+  paginaActual = 1;
+  tamanoPagina = 6; // Ajusta a 4 o 6 según qué tan altas sean tus tarjetas en móvil
+
+  // Cambia de categoría y regresa a la página 1
+  seleccionarCategoria(cat: string): void {
+    this.categoriaSeleccionada = cat;
+    this.paginaActual = 1;
+  }
+
+  // Productos filtrados (sin paginar)
+  get productosFiltrados(): Producto[] {
+    if (this.categoriaSeleccionada === 'Todas') return this.productos;
+    return this.productos.filter(p => p.categoria === this.categoriaSeleccionada);
+  }
+
+  // Solo paginamos cuando estamos en 'Todas' para acortar el scroll en celular
+  get totalPaginas(): number {
+    return Math.max(1, Math.ceil(this.productosFiltrados.length / this.tamanoPagina));
+  }
+
+  get productosVisibles(): Producto[] {
+    const lista = this.productosFiltrados;
+    const inicio = (this.paginaActual - 1) * this.tamanoPagina;
+    return lista.slice(inicio, inicio + this.tamanoPagina);
+  }
+
+  irAPagina(pagina: number): void {
+    const destino = Math.min(Math.max(1, pagina), this.totalPaginas);
+    this.paginaActual = destino;
+  }
+
 }
