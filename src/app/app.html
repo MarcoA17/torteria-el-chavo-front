@@ -24,6 +24,11 @@
         <p class="info-contacto">📍 {{ negocio.direccion }} · 📞 {{ negocio.telefonos[0] }} / {{ negocio.telefonos[1] }}
         </p>
       </div>
+
+      <div class="ilustracion-chavo-banner" aria-hidden="true">
+        <img src="/assets/images/chavoTorta.png" alt="El Chavo comiendo su torta en el barril" />
+      </div>
+
     </div>
 
     <div class="selector-vista">
@@ -53,7 +58,6 @@
         </div>
       </div>
 
-      <p *ngIf="cargando" class="estado">Preparando el menú desde la cocina...</p>
       <p *ngIf="cargando" class="estado">Preparando el menú desde la cocina...</p>
 
       <div *ngIf="errorCarga" class="estado error">

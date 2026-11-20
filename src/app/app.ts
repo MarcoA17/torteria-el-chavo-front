@@ -2,7 +2,7 @@ import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
-import {retry, timer, throwError, timeout } from 'rxjs';
+import { retry, timer, throwError, timeout } from 'rxjs';
 import { AdminPedidosComponent } from './pages/admin-pedidos/admin-pedidos';
 import { environment } from '../environments/environment';
 
@@ -220,6 +220,11 @@ export class App implements OnInit {
     if (this.carrito.length === 0 || this.enviandoPedido) return;
 
     this.errorPedido = '';
+    const mensajeError = this.validarFormularioPedido();
+    if (mensajeError) {
+      this.errorPedido = mensajeError;
+      return;
+    }
     this.enviandoPedido = true;
 
     const snapshotCarrito = [...this.carrito];
@@ -251,7 +256,7 @@ export class App implements OnInit {
           this.telefono = '';
           this.direccion = '';
           this.notas = '';
-          
+
           localStorage.setItem('ultimoFolioChavo', String(pedidoGuardado.id));
           this.folioConsulta = pedidoGuardado.id;
           this.pedidoConsultado = pedidoGuardado;
@@ -290,5 +295,27 @@ export class App implements OnInit {
           this.cdr.detectChanges();
         }
       });
+  }
+
+  private validarFormularioPedido(): string | null {
+    if (this.carrito.length === 0) {
+      return 'Agrega al menos un producto a tu canasta.';
+    }
+
+    const nombreLimpio = this.clienteNombre.trim();
+    if (nombreLimpio.length < 2) {
+      return 'Por favor escribe tu nombre para identificar tu orden.';
+    }
+
+    const telefonoLimpio = this.telefono.replace(/\D/g, '');
+    if (telefonoLimpio.length !== 10) {
+      return 'Ingresa un teléfono válido de 10 dígitos (ej. 2431261277).';
+    }
+
+    if (this.tipoEntrega === 'Domicilio' && this.direccion.trim().length < 5) {
+      return 'Ingresa tu dirección completa para el servicio a domicilio.';
+    }
+
+    return null;
   }
 }
