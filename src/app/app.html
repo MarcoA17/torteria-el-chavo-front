@@ -54,7 +54,14 @@
       </div>
 
       <p *ngIf="cargando" class="estado">Preparando el menú desde la cocina...</p>
-      <p *ngIf="errorCarga" class="estado error">{{ errorCarga }}</p>
+      <p *ngIf="cargando" class="estado">Preparando el menú desde la cocina...</p>
+
+      <div *ngIf="errorCarga" class="estado error">
+        <p>{{ errorCarga }}</p>
+        <button type="button" class="btn-agregar" (click)="cargarMenu()">
+          ↻ Reintentar cargar menú
+        </button>
+      </div>
 
       <div class="lista-productos" *ngIf="!cargando && !errorCarga">
         <div class="tarjeta-producto" [class.destacada]="p.nombre.toLowerCase().includes('jamón')"

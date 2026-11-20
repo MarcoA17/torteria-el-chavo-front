@@ -2,9 +2,10 @@ import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
-import { timeout } from 'rxjs';
+import {retry, timer, throwError, timeout } from 'rxjs';
 import { AdminPedidosComponent } from './pages/admin-pedidos/admin-pedidos';
 import { environment } from '../environments/environment';
+
 
 export interface Producto {
   id: number;
@@ -156,7 +157,16 @@ export class App implements OnInit {
     this.errorCarga = '';
 
     this.http.get<Producto[]>(this.menuUrl)
-      .pipe(timeout(6000))
+      .pipe(
+        timeout(50000),
+        retry({
+          count: 2,
+          delay: (error, retryCount) => {
+            console.log(`Reintentando cargar menú (${retryCount})...`);
+            return timer(4000);
+          }
+        })
+      )
       .subscribe({
         next: (data) => {
           this.productos = Array.isArray(data)
@@ -167,7 +177,7 @@ export class App implements OnInit {
         },
         error: (err) => {
           console.error('Error al cargar el menú:', err);
-          this.errorCarga = `No se pudo cargar el menú desde ${this.menuUrl}.`;
+          this.errorCarga = `No se pudo cargar el menú desde ${this.menuUrl}. El servidor podría estar despertando; intenta de nuevo en unos segundos.`;
           this.cargando = false;
           this.cdr.detectChanges();
         }
